@@ -10,7 +10,8 @@ import subprocess
 import warnings
 
 from .setup_dart import setup_dart
-from .setup_experiment_tools import establish_config, replace_in_file, get_machine
+from .setup_experiment_tools import \
+    establish_config, replace_in_file, get_machine
 from .setup_initial_ens import setup_initial_ens
 from .setup_obs_prep import setup_obs_prep
 from .setup_wrf_hydro import setup_wrf_hydro

@@ -123,3 +123,9 @@ def get_machine():
             #    warnings.warn('This machine is not recognized, using docker defaults.')
     return machine
 
+
+def dart_noah(config):
+    dart_work = config['dart']['work_dirs']
+    noah_match = [True for pp in dart_work if 'models/noah/work' in pp]
+    return any(noah_match)
+

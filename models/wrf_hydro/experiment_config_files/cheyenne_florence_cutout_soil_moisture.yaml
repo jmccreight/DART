@@ -45,7 +45,7 @@ wrf_hydro:
   domain_version: v1.2.1
   domain_symlink: True
   hydro_namelist_config_file: /glade/work/jamesmcc/domains/private/florence_933020089/hydro_namelists.json
-  hrldas_namelist_config_file: /glade/work/jamesmcc/domains/private/florence_933020089/hrldas_namelists.json
+  hrldas_namelist_config_file: /glade/work/jamesmcc/domains/private/florence_933020089/hrldas_namelists_noah_sm.json
   compile_options_config_file: /glade/work/jamesmcc/domains/private/florence_933020089/compile_options.json
 
   
@@ -144,10 +144,7 @@ initial_ens:
         # Do not specify input_state_file_list, domain_order, or domain_shapefiles.
         # These are handled by the values passed to input_nml:filter_nml:input_state_file_list
         debug: 0
-        domain_order: 'lsm'
-        # domain_shapefiles: 'restart.lsm.nc'
-        # hydro_variables: ['qlink1',            'QTY_STREAM_FLOW',        '0.0',   'NA', 'UPDATE',
-        #                   'z_gwsubbas',        'QTY_UNDER_RUNOFF',       '0.0',   'NA', 'UPDATE']
+        domain_shapefiles: '/glade/work/jamesmcc/domains/private/florence_933020089/NWM/RESTART_open-loop/RESTART.2018081500_DOMAIN1'
         lsm_variables: ['SMC',            'QTY_SOIL_MOISTURE',        '0.0',   '1.0', 'UPDATE']
 
   # The advance section is not being used...       
@@ -241,11 +238,10 @@ run_experiment:
       model_nml:
         hydro_variables: ['qlink1',            'QTY_STREAM_FLOW',        '0.0',   'NA', 'UPDATE',
                           'z_gwsubbas',        'QTY_UNDER_RUNOFF',       '0.0',   'NA', 'UPDATE']
-        max_link_distance: 4000.0
-        # domain_order and domain_shapefiles are made consistent with the initial ensemble
+                # domain_order and domain_shapefiles are made consistent with the initial ensemble
         # when initial_ens: from_filter: use is True.
         # domain_order: 'hydro'
-        # domain_shapefiles: 'restart.hydro.nc'
+        domain_shapefiles: '/glade/work/jamesmcc/domains/private/flo_933020089/NWM/RESTART_open-loop/RESTART.2018080100_DOMAIN1'
         # input_state_file_list and output_state_file_list conventions in
         # are used in run_filter_experiment:
         #Note the name and order convention for the state file lists:
