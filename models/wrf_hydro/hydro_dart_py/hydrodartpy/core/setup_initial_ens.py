@@ -1,16 +1,18 @@
 from copy import deepcopy
 import f90nml
 import json
+import math
 import os
 import pathlib
 import shlex
 import shutil
 import subprocess
+import warnings
 import wrfhydropy
 
 from .create_parameter_restart_file import create_parameter_restart_file
 from .obs_seq_dummy import obs_seq_dummy
-from .setup_experiment_tools import get_top_level_dir_from_config
+from .setup_experiment_tools import get_top_level_dir_from_config, dart_noah
 
 # TODO(JLM): this could be further broken into param restart creation
 # and "from filter" parts, though threre are some interdependencies.
@@ -18,7 +20,7 @@ from .setup_experiment_tools import get_top_level_dir_from_config
 def setup_initial_ens(config, wrf_hydro_ens_sim):
 
     # This leverages the same setup object for advancing the model.
-
+    
     # -------------------------------------------------------
     # This section is established needed variables for either of
     # 1) create param file or
@@ -43,9 +45,17 @@ def setup_initial_ens(config, wrf_hydro_ens_sim):
         domain_config_rst_path = config['wrf_hydro']['domain_src'] / \
             pathlib.Path(config_namelist['hydro_nlist']['restart_file']).parent
 
-        if input_state_file_list['hydro_file_list.txt'] is None:
-            input_state_file_list['hydro_file_list.txt'] = \
-                wrf_hydro_ens_sim.members[0].base_hydro_namelist['hydro_nlist']['restart_file']
+        if not dart_noah(config):
+            if input_state_file_list['hydro_file_list.txt'] is None:
+                input_state_file_list['hydro_file_list.txt'] = (
+                    wrf_hydro_ens_sim.members[0]
+                    .base_hydro_namelist['hydro_nlist']['restart_file'])
+        else:
+            if input_state_file_list['restart_file_list.txt'] is None:
+                input_state_file_list['restart_file_list.txt'] = (
+                    wrf_hydro_ens_sim.members[0]
+                    .base_hrldas_namelist['noahlsm_offline']
+                    ['restart_filename_requested'])
 
     # -------------------------------------------------------
     # Create a parameter restart file
@@ -86,8 +96,12 @@ def setup_initial_ens(config, wrf_hydro_ens_sim):
         init_ens_filter_dir.mkdir()
 
         # Copy filter and input_nml
-        model_work_path = (config['experiment']['experiment_dir'] / config['dart']['build_dir'] /
-                           'models/wrf_hydro/work')
+        models_dir = [ww for ww in config['dart']['work_dirs'] if 'models' in ww]
+        if len(models_dir) != 1:
+            raise ValueError("Currently only supporting individual models")
+        model_work_path = (config['experiment']['experiment_dir'] /
+                           config['dart']['build_dir'] /
+                           models_dir[0])
         shutil.copy(model_work_path / 'filter', init_ens_filter_dir / 'filter')
         shutil.copy(model_work_path / 'input.nml', init_ens_filter_dir / 'input.nml')
 
@@ -95,13 +109,16 @@ def setup_initial_ens(config, wrf_hydro_ens_sim):
         init_ens_filter_nml = f90nml.read(init_ens_filter_dir / 'input.nml')
 
         # This one is handled differently in the YAML than in the fortran.
-        init_ens_filter_nml_update = deepcopy(config['initial_ens']['from_filter']['input_nml'])
+        init_ens_filter_nml_update = deepcopy(
+            config['initial_ens']['from_filter']['input_nml'])
         _ = init_ens_filter_nml_update['filter_nml'].pop('input_state_file_list')
         check_keys = init_ens_filter_nml_update['model_nml'].keys()
+
         for bb in ['input_state_file_list', 'domain_order', 'domain_shapefiles']:
             if bb in check_keys:
-                warnings.warn("Key " + bb + " in initial_ens input_nml model_nml is ignored.")
-        
+                warnings.warn(
+                    "Key " + bb + " in initial_ens input_nml model_nml is ignored.")
+
         ## Apply patches
         init_ens_filter_nml = init_ens_filter_nml.todict()
         for kk in list(init_ens_filter_nml_update.keys()):
@@ -109,16 +126,16 @@ def setup_initial_ens(config, wrf_hydro_ens_sim):
                 #_ = init_ens_filter_nml_update.pop(kk)
                 init_ens_filter_nml[kk].update(init_ens_filter_nml_update[kk])        
         init_ens_filter_nml = f90nml.Namelist(init_ens_filter_nml)
-        
+
         input_file_lists = []
         domain_order_list = []
         domain_shapefile_list = []
-        
+
         if input_state_file_list['hydro_file_list.txt'] is not None:
             input_file_lists.append('hydro_file_list.txt')
             domain_order_list.append('hydro')
             domain_shapefile_list.append(str(input_state_file_list['hydro_file_list.txt']))
-            
+
         if input_state_file_list['restart_file_list.txt'] is not None:
             input_file_lists.append('restart_file_list.txt')
             domain_order_list.append('lsm')
@@ -135,8 +152,10 @@ def setup_initial_ens(config, wrf_hydro_ens_sim):
             domain_shapefile_list.append(str(input_state_file_list['param_file_list.txt']))
 
         init_ens_filter_nml['filter_nml']['input_state_file_list'] = input_file_lists
-        init_ens_filter_nml['model_nml']['domain_order'] = domain_order_list
         init_ens_filter_nml['model_nml']['domain_shapefiles'] = domain_shapefile_list
+        # domain_order is not usedin the noah namelist
+        if not dart_noah(config):
+            init_ens_filter_nml['model_nml']['domain_order'] = domain_order_list
 
         # Create the hydro_file_list.txt and param_file_list.txt files
         for ff in input_file_lists:
@@ -182,16 +201,30 @@ def setup_initial_ens(config, wrf_hydro_ens_sim):
         _ = nml['hydro_nlist'].pop('io_form_outputs')
         nml.write(init_ens_filter_dir / 'hydro.namelist', force=True)
 
+        nml = f90nml.Namelist(wrf_hydro_setup_0.base_hydro_namelist)
+        # _ = nml['hydro_nlist'].pop('chanobs_domain')
+        nml.write(init_ens_filter_dir / 'hydro.namelist', force=True)
+
+        nml = f90nml.Namelist(wrf_hydro_setup_0.base_hrldas_namelist)
+        # _ = nml['noahlsm_offline'].pop('glacier_option')
+        # nml['noahlsm_offline']['hrldas_constants_file'] = (
+        #     nml['noahlsm_offline'].pop('hrldas_setup_file'))
+        # nml['noahlsm_offline']['kday'] = math.ceil(
+        #     nml['noahlsm_offline'].pop('khour') / 24)
+        nml.write(init_ens_filter_dir / 'namelist.hrldas', force=True)
+
         # Have to create a dummy obs_seq.out file to run filter
-        if input_state_file_list['hydro_file_list.txt'] is None:
-            hydro_rst_deterministic = \
-                config['wrf_hydro']['domain_src'] / nml['hydro_nlist']['restart_file']
-        else:
-            hydro_rst_deterministic = input_state_file_list['hydro_file_list.txt']
-        obs_seq_dummy(
-            hydro_rst=hydro_rst_deterministic,
-            dir=init_ens_filter_dir
-        )
+        if not dart_noah(config):
+            if input_state_file_list['hydro_file_list.txt'] is None:
+                hydro_rst_deterministic = (
+                    config['wrf_hydro']['domain_src'] /
+                    nml['hydro_nlist']['restart_file'])
+            else:
+                hydro_rst_deterministic = input_state_file_list['hydro_file_list.txt']
+            obs_seq_dummy(
+                hydro_rst=hydro_rst_deterministic,
+                dir=init_ens_filter_dir
+            )
 
         # TODO(JLM): eventually need to do this for the RESTART file namelist
 

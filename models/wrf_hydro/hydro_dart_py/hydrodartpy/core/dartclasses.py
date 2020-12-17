@@ -11,7 +11,7 @@ import subprocess
 import uuid
 import warnings
 
-from wrfhydropy import get_git_revision_hash
+from wrfhydropy.core.model import get_git_revision_hash
 from wrfhydropy.core.ensemble_tools import get_ens_dotfile_end_datetime
 
 from wrfhydropy import Job, Scheduler
@@ -28,7 +28,11 @@ class DartWork(object):
 
         self.path_rel = path_rel
 
-        self.input_nml_file = path_dart / self.path_rel / 'input.nml'
+        if str(path_rel) == 'models/noah/work':
+            self.input_nml_file = (
+                path_dart / 'models/wrf_hydro/work/input_noah.nml')
+        else:
+            self.input_nml_file = path_dart / path_rel / 'input.nml'
         self.input_nml = f90nml.read(self.input_nml_file)
 
         if build_dir != path_dart:
