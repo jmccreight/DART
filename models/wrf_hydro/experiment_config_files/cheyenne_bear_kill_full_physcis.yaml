@@ -16,7 +16,7 @@ modules: ## !!!  NOT currently in use: make sure your modules match
 
   
 dart:
-  use_existing_build: TRUE
+  use_existing_build: FALSE
   # Absolute path required
   dart_src: /glade/u/home/${USER}/WRF_Hydro/DART/
   fork: ## !!! NOT currently in use
@@ -26,7 +26,7 @@ dart:
   mpi: True
   # Currently the build directory is in side the experiment directory, specified below
   build_dir: dart_build
-  work_dirs: ['models/wrf_hydro/work', 'observations/obs_converters/NYSM/work/']
+  work_dirs: ['models/noah/work', 'observations/obs_converters/NYSM/work/']
 
 
 wrf_hydro:
@@ -113,45 +113,45 @@ initial_ens:
     # If use is True, then consistency checks between the initial
     # ensemble and the experiment are performed.
     # TODO(JLM): rename use to "use_domain_order_shp" or something ?
-    use: True
+    use: False
     mode: 'r'   ## !!! May NOT be in use
-    input_nml:
-      filter_nml:
-        perturb_from_single_instance: [true]
-        inf_flavor: [5, 0]
-        inf_initial: [1.0, 1.0]
-        inf_sd_initial: [0.6, 0.6]
-        inf_sd_lower_bound: [0.6, 0.6]
-        inf_damping: [0.9, 0.9]
-        inf_initial_from_restart: [false, false]
-        inf_sd_initial_from_restart: [false, false]
+#    input_nml:
+#      filter_nml:
+#       perturb_from_single_instance: [true]
+#        inf_flavor: [5, 0]
+#        inf_initial: [1.0, 1.0]
+#        inf_sd_initial: [0.6, 0.6]
+#        inf_sd_lower_bound: [0.6, 0.6]
+#        inf_damping: [0.9, 0.9]
+#        inf_initial_from_restart: [false, false]
+#        inf_sd_initial_from_restart: [false, false]
         # In input_state_file_list, the fields are NOT simply patched:
-        input_state_file_list:
+#        input_state_file_list:
           # The fields here are the files to be spcified in a this list (for each domain,
           # in domain order). The values to each specifies the CONTENTS of the text files,
           # which are the full paths to the appropriate domains' restart files, the files
           # are created during the setup process.
           # If blank: the restarts in the wrfhydro config/domain are used (unless channel-only).
-          restart_file_list.txt:
+#          restart_file_list.txt:
           # If blank: the restarts in the wrfhydro config/domain are used.
-          hydro_file_list.txt: /glade/work/arezoo/STEP/2020_work/DART/domains/cherry_creek/NWM/RESTART_open-loop/HYDRO_RST.2016-06-13_00:00_DOMAIN1
+#          hydro_file_list.txt: /glade/work/arezoo/STEP/2020_work/DART/domains/cherry_creek/NWM/RESTART_open-loop/HYDRO_RST.2016-06-13_00:00_DOMAIN1
           # If param_restart_file:create is True, then the created parameter file is used here.
           # If you specify one here, do not also create one above.
-          param_file_list.txt: 
+#          param_file_list.txt: 
           # The resulting output files are in intial_ens:path/member_iii/.
           # The following input.nml namelist fields should not be edited...
           # Depending on domain order and incluusion, something like the following:
           # output_state_file_list:'restarf_file_list.txt', 'hydro_file_list.txt', 'param_file_list.txt'
           # perturb_from_single_instance: <forcibly true>
           # num_output_state_members: <should be the ensemble size>
-      model_nml:
-        model_perturbation_amplitude: 0.1
-        perturb_distribution: 'lognormal'
+#      model_nml:
+#        model_perturbation_amplitude: 0.1
+#        perturb_distribution: 'lognormal'
         # Do not specify input_state_file_list, domain_order, or domain_shapefiles.
         # These are handled by the values passed to input_nml:filter_nml:input_state_file_list
-        debug: 0
-        hydro_variables: ['qlink1',            'QTY_STREAM_FLOW',        '0.0',   'NA', 'UPDATE',
-                          'z_gwsubbas',        'QTY_UNDER_RUNOFF',       '0.0',   'NA', 'UPDATE']
+#        debug: 0
+#        hydro_variables: ['qlink1',            'QTY_STREAM_FLOW',        '0.0',   'NA', 'UPDATE',
+#                          'z_gwsubbas',        'QTY_UNDER_RUNOFF',       '0.0',   'NA', 'UPDATE']
 
   # The advance section is not being used...       
   advance:
@@ -160,7 +160,40 @@ initial_ens:
 
 # The fields under the top level must be listed in dart:observations: above.
 observation_preparation:
-  all_obs_dir: /glade/work/arezoo/STEP/2020_work/DART/obs_seqs/cherry_creek
+  all_obs_dir: /glade/work/arezoo/SUNY/DART/domains/01350035/obs_seq/
+  NYSM_snow_daily:
+    prepare: True
+    identity_obs: False # this is just a place holder right now and does not do anything if set to TRUE
+    input_dir: /glade/work/arezoo/SUNY/OBS/NYSM/standard/2018-19/
+    # Note that the files from output_dir would be symlinked in all_obs_dir, therefore it cannot be the same folder. 
+    output_dir: /glade/work/arezoo/SUNY/DART/domains/01350035/obs_seq/NYSM
+    # Date range in YYYY-mm-dd format
+    start_date: 2019-01-18
+    end_date:   2019-01-30
+    # A list of gages can be given in the following which will be written to the file.
+    # If a string is given, that indicates a file to use which will be symlinked into
+    # place for reference.
+    wanted_gages: [] # right now this is not working, and will include all the gages 
+    input_nml_patches:
+      # Identity_obs == True needs: create_identity_NYSM_snow_nml
+      # Identity_obs == False needs: convert_NYSM_snow_nml
+      convert_NYSM_snow_nml:
+        # input_files: handled internally using input_dir and start and end dates above.
+        # gages_list_file: handled by wanted gages above.
+        # The following patches are applied directly.
+        obs_fraction_for_error: 0.17
+    exe_cmd: '{cmd} >& converter.stdeo'
+    scheduler:
+      # ppn is the number of processors per node. This is required to be correct.
+      ncpus: 36
+      mpiprocs: 1
+      account: 'P48500028'
+      walltime: '00:40'
+      job_name: 'tep_obs_prep' #_{model_start_time_str}'
+      queue: 'regular'
+      email_when: "abe"
+      email_who: ${USER}@ucar.edu
+
   USGS_daily:
     prepare: False
     identity_obs: True
@@ -201,7 +234,7 @@ observation_preparation:
 run_experiment: 
   
   time:
-    end_time: 2016-06-15_06:00 ## Format: %Y-%m%d_%H:%M
+    end_time: 2019-01-19_00:00 ## Format: %Y-%m%d_%H:%M
     advance_model_hours: 1  ## TODO (JLM): check for next ob when actually setting this.
     assim_window:
       # TODO(JLM): WHAT IS THIS???
@@ -217,12 +250,8 @@ run_experiment:
     # the deterministic forcing files).
     src_dir:
     src_copy:
-    noise_function_files: [
-    '/glade/u/home/${USER}/WRF_Hydro/DART_development/models/wrf_hydro/python/perturb/perturb_channel_bucket_only_forcing.py',
-    '/glade/u/home/${USER}/WRF_Hydro/DART_development/models/wrf_hydro/python/perturb/noise_qBtmVertRunoff_additive_fraction.py',
-    '/glade/u/home/${USER}/WRF_Hydro/DART_development/models/wrf_hydro/python/perturb/noise_qSfcLatRunoff_additive_fraction.py'
-    ]
-    noise_cmd: 'python perturb_channel_bucket_only_forcing.py --source_forcing_dir FORCING_AnA_channel-only --perturb_forcing_dir FORCING_perturbed --qsfclat_perturb_func noise_qSfcLatRunoff_additive_fraction.py --qbtmvert_perturb_func noise_qBtmVertRunoff_additive_fraction.py'
+    noise_function_files: 
+    noise_cmd: 
 
   dart:
     # incliuding obs_sequence_tool in exes will subset the obs_seq files.
@@ -240,11 +269,11 @@ run_experiment:
         inf_sd_initial_from_restart: [true, false]
         #input_state_file_list: 'hydro_file_list.txt'
         #output_state_file_list: 'hydro_file_list.txt' 
-      model_nml:
+#      model_nml:
         #hydro_variables: ['qlink1',            'QTY_STREAM_FLOW',        '0.0',   'NA', 'UPDATE',
-        #                  'z_gwsubbas',        'QTY_UNDER_RUNOFF',       '0.0',   'NA', 'UPDATE']
-        #max_link_distance: 4000.0
-        lsm_variables:['SH2O', 'QTY_SOIL_LIQUID_WATER', '0.0', 'NA', 'UPDATE']
+         #                 'z_gwsubbas',        'QTY_UNDER_RUNOFF',       '0.0',   'NA', 'UPDATE']
+#        max_link_distance: 4000.0
+        #lsm_variables:['SH2O', 'QTY_SOIL_LIQUID_WATER', '0.0', 'NA', 'UPDATE']
         # domain_order and domain_shapefiles are made consistent with the initial ensemble
         # when initial_ens: from_filter: use is True.
         # domain_order: 'hydro'
@@ -254,8 +283,8 @@ run_experiment:
         #Note the name and order convention for the state file lists:
         # 1) hydro_file_list.txt  2) lsm_file_list.txt  3) param_file_list.txt
 
-      assim_tools_nml:
-        cutoff: 0.0003139  # 0.5*the max. reach length specified in model_nml 
+#      assim_tools_nml:
+#        cutoff: 0.0003139  # 0.5*the max. reach length specified in model_nml 
 #       anamorphosis: [false]
 
   # Notes on choosing job_execution resources.
