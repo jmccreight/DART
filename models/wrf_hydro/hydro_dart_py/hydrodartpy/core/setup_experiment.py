@@ -243,8 +243,12 @@ allobsdir={3}
 
     # DART binaries / namelist
     print('Staging DART executables and input.nml.')
-    model_work_path = ( config['experiment']['experiment_dir'] / config['dart']['build_dir'] /
-                        'models/wrf_hydro/work' )
+    if 'models/noah/work' in config['dart']['work_dirs'] :
+        model_work_path = ( config['experiment']['experiment_dir'] / config['dart']['build_dir'] /
+                            'models/noah/work' )
+    else: 
+        model_work_path = ( config['experiment']['experiment_dir'] / config['dart']['build_dir'] /
+                           'models/wrf_hydro/work' )
 
     dart_exe_names = config['run_experiment']['dart']['exes']
     for dd in dart_exe_names:
@@ -271,6 +275,7 @@ allobsdir={3}
 
     # input.nml patches and checks
     print('Apply namelist patches and checks.')
+    print(dart_input_nml)
     input_nml = f90nml.read(dart_input_nml)
 
     # Ensure consistency with initial ensemble from filter if being used.
