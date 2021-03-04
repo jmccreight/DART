@@ -16,7 +16,7 @@ modules: ## !!!  NOT currently in use: make sure your modules match
 
   
 dart:
-  use_existing_build: FALSE
+  use_existing_build: True
   # Absolute path required
   dart_src: /glade/u/home/${USER}/WRF_Hydro/DART/
   fork: ## !!! NOT currently in use
@@ -27,10 +27,11 @@ dart:
   # Currently the build directory is in side the experiment directory, specified below
   build_dir: dart_build
   work_dirs: ['models/noah/work', 'observations/obs_converters/NYSM/work/']
+# NOTE that the input.nml is coming from wrf_hydro/work/input_noah.nml 
 
 
 wrf_hydro:
-  use_existing_build: TRUE
+  use_existing_build: True
   # Absolute path required:
   wrf_hydro_src: /glade/u/home/${USER}/WRF_Hydro/wrf_hydro_nwm_public
   fork:   ## !!! NOT currently in use
@@ -71,7 +72,7 @@ ensemble:
   ncores_setup: 2
   # Should the size be taken from the initial_ens or is this allowed
   # as a double check?
-  size: 80
+  size: 20
 
   # AREZOO
   # the domain_ens_size and the forcing_end_size is defined in the constructor and 
@@ -95,9 +96,9 @@ initial_ens:
     # The following default to the restart files provided in the domain.
     hydro_rst: 
     restart:
-    existing_variables: [qlink1,  qlink1]
-    new_variables: [qBucketMult,  qSfcLatRunoffMult]
-    values: [1, 1]
+    existing_variables: 
+    new_variables: 
+    values: 
   from_filter:
     # Optionally create the inital ensemble from filter perturbation + advance.
     # This will use the same ensemble constructed by set
@@ -115,43 +116,36 @@ initial_ens:
     # TODO(JLM): rename use to "use_domain_order_shp" or something ?
     use: False
     mode: 'r'   ## !!! May NOT be in use
-#    input_nml:
-#      filter_nml:
-#       perturb_from_single_instance: [true]
-#        inf_flavor: [5, 0]
-#        inf_initial: [1.0, 1.0]
-#        inf_sd_initial: [0.6, 0.6]
-#        inf_sd_lower_bound: [0.6, 0.6]
-#        inf_damping: [0.9, 0.9]
-#        inf_initial_from_restart: [false, false]
-#        inf_sd_initial_from_restart: [false, false]
+    input_nml:
+      filter_nml:
+        perturb_from_single_instance: [true]
+        inf_flavor: [5, 0]
+        inf_initial: [1.0, 1.0]
+        inf_sd_initial: [0.6, 0.6]
+        inf_sd_lower_bound: [0.6, 0.6]
+        inf_damping: [0.9, 0.9]
+        inf_initial_from_restart: [false, false]
+        inf_sd_initial_from_restart: [false, false]
         # In input_state_file_list, the fields are NOT simply patched:
-#        input_state_file_list:
+        input_state_file_list:
           # The fields here are the files to be spcified in a this list (for each domain,
           # in domain order). The values to each specifies the CONTENTS of the text files,
           # which are the full paths to the appropriate domains' restart files, the files
           # are created during the setup process.
           # If blank: the restarts in the wrfhydro config/domain are used (unless channel-only).
-#          restart_file_list.txt:
+          restart_file_list.txt:
           # If blank: the restarts in the wrfhydro config/domain are used.
-#          hydro_file_list.txt: /glade/work/arezoo/STEP/2020_work/DART/domains/cherry_creek/NWM/RESTART_open-loop/HYDRO_RST.2016-06-13_00:00_DOMAIN1
+          hydro_file_list.txt: 
           # If param_restart_file:create is True, then the created parameter file is used here.
           # If you specify one here, do not also create one above.
-#          param_file_list.txt: 
+          param_file_list.txt: 
           # The resulting output files are in intial_ens:path/member_iii/.
           # The following input.nml namelist fields should not be edited...
           # Depending on domain order and incluusion, something like the following:
           # output_state_file_list:'restarf_file_list.txt', 'hydro_file_list.txt', 'param_file_list.txt'
           # perturb_from_single_instance: <forcibly true>
           # num_output_state_members: <should be the ensemble size>
-#      model_nml:
-#        model_perturbation_amplitude: 0.1
-#        perturb_distribution: 'lognormal'
-        # Do not specify input_state_file_list, domain_order, or domain_shapefiles.
-        # These are handled by the values passed to input_nml:filter_nml:input_state_file_list
-#        debug: 0
-#        hydro_variables: ['qlink1',            'QTY_STREAM_FLOW',        '0.0',   'NA', 'UPDATE',
-#                          'z_gwsubbas',        'QTY_UNDER_RUNOFF',       '0.0',   'NA', 'UPDATE']
+      model_nml:
 
   # The advance section is not being used...       
   advance:
@@ -162,7 +156,7 @@ initial_ens:
 observation_preparation:
   all_obs_dir: /glade/work/arezoo/SUNY/DART/domains/01350035/obs_seq/
   NYSM_snow_daily:
-    prepare: True
+    prepare: FALSE
     identity_obs: False # this is just a place holder right now and does not do anything if set to TRUE
     input_dir: /glade/work/arezoo/SUNY/OBS/NYSM/standard/2018-19/
     # Note that the files from output_dir would be symlinked in all_obs_dir, therefore it cannot be the same folder. 
@@ -234,14 +228,14 @@ observation_preparation:
 run_experiment: 
   
   time:
-    end_time: 2019-01-19_00:00 ## Format: %Y-%m%d_%H:%M
+    end_time: 2019-01-23_00:00 ## Format: %Y-%m%d_%H:%M
     advance_model_hours: 1  ## TODO (JLM): check for next ob when actually setting this.
     assim_window:
       # TODO(JLM): WHAT IS THIS???
       use_input_nml: False
       assim_window_size_hours: 1
     # If both of these skips are False, then missing obs trigger a fatal error.  
-    skip_missing_obs_hours: False
+    skip_missing_obs_hours: TRUE
     skip_missing_obs_days: False
     
   perturb_forcing:
@@ -258,7 +252,7 @@ run_experiment:
     exes: ['filter','obs_sequence_tool']
     input_nml_patches:
       filter_nml:
-        inf_flavor: [5, 0]
+        inf_flavor: [0, 0]
         inf_initial: [1.0, 1.0]
         inf_lower_bound: [0.0, 0.0]
         inf_sd_initial: [0.6, 0.6]
@@ -267,17 +261,14 @@ run_experiment:
         inf_sd_max_change: [1.05, 1.05]
         inf_initial_from_restart: [true, false]
         inf_sd_initial_from_restart: [true, false]
-        #input_state_file_list: 'hydro_file_list.txt'
-        #output_state_file_list: 'hydro_file_list.txt' 
-#      model_nml:
-        #hydro_variables: ['qlink1',            'QTY_STREAM_FLOW',        '0.0',   'NA', 'UPDATE',
-         #                 'z_gwsubbas',        'QTY_UNDER_RUNOFF',       '0.0',   'NA', 'UPDATE']
-#        max_link_distance: 4000.0
-        #lsm_variables:['SH2O', 'QTY_SOIL_LIQUID_WATER', '0.0', 'NA', 'UPDATE']
+        input_state_file_list: 'lsm_file_list.txt'
+        output_state_file_list: 'lsm_file_list.txt' 
+      model_nml:
+        lsm_model_choice : 'noahMP'
+        lsm_variables: ['SNOWH', 'QTY_SNOW_THICKNESS', '0.0', 'NA', 'UPDATE']
         # domain_order and domain_shapefiles are made consistent with the initial ensemble
         # when initial_ens: from_filter: use is True.
-        # domain_order: 'hydro'
-        # domain_shapefiles: 'restart.hydro.nc'
+        domain_shapefiles: '/glade/work/arezoo/SUNY/DART/domains/01350035/NWM/initial_ens/member_000/RESTART.2019011900_DOMAIN1'
         # input_state_file_list and output_state_file_list conventions in
         # are used in run_filter_experiment:
         #Note the name and order convention for the state file lists:
@@ -320,7 +311,7 @@ run_experiment:
       # nproc above and the appropriate, full set of hostnames available.
       # Certain MPI distributions may need env variable, passed as a dictionary of key:value pairs.
       # OpenMPI:
-      exe_cmd: 'mpirun --host {hostname} -np {nproc} {cmd}'
+      exe_cmd: 'mpirun -np {nproc} {cmd}'
       env: None
       # MPT: UNSATISFACTORY PERFORMANCE.
       # exe_cmd: 'mpirun --host {hostname} -np {nproc} ./wrf_hydro.exe'
