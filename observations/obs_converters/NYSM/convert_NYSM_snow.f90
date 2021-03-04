@@ -192,7 +192,7 @@ FILELOOP : do ifile=1,nfiles
    read(iunit,'(A)', iostat=io) input_file
    if (io /= 0 ) then
      write(string1,*) 'Unable to read input file from "'//trim(input_files)//'"'
-     write(string2,*) 'file ',ifile
+!     write(string2,*) 'file ',ifile
      call error_handler(E_ERR,'convert_NYSM_snow',string1, &
                 source, revision, revdate, text2=string2)
    endif
@@ -258,7 +258,7 @@ FILELOOP : do ifile=1,nfiles
       write(*,*)''  ! just some whitespace for clarity
 
       STATIONLOOP: do n = 1, station_num
-         write(*,*)n, snow_depth(m,n)
+!         write(*,*)n, snow_depth(m,n)
 
          if (snow_depth(m,n) == FillValue) cycle STATIONLOOP
 
