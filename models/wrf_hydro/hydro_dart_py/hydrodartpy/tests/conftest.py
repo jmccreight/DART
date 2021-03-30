@@ -3,11 +3,15 @@ import hydrodartpy
 import os
 import pathlib
 import pytest
+import shlex
 import shutil
 import subprocess
 import yaml
 
 import hydrodartpy.core.setup_experiment_tools as hdp_tools
+
+
+repo_dir = hdp_tools.repo_dir
 
 
 def if_e_rm(path: pathlib.Path):
@@ -122,12 +126,45 @@ def config_file(request, test_dir):
         exp_config['observation_preparation']['USGS_daily']['output_dir'] = str(
             all_obs_dir / 'USGS_daily')
 
+    if ('noise_function_files' in
+        exp_config['run_experiment']['perturb_forcing'].keys()):
+        pf = exp_config['run_experiment']['perturb_forcing']
+        nffs = pf['noise_function_files']
+        nffs = [str(repo_dir.joinpath(nff)) for nff in nffs]
+        pf['noise_function_files'] = nffs
+
     test_dir = pathlib.Path(os.getcwd())
     exp_config['dart']['dart_src'] = str(
         test_dir.parent.parent.parent.parent.parent)
     ## could clone/update a model repo here
-    exp_config['wrf_hydro']['wrf_hydro_src'] = str(
-        test_dir / 'data/wrf_hydro_nwm_public')
+    wrf_hydro_src = test_dir / 'data/wrf_hydro_nwm_public'
+    exp_config['wrf_hydro']['wrf_hydro_src'] = str(wrf_hydro_src)
+
+    print('\n\n'
+          '**********************************\n'
+          'WRF-Hydro repository information:\n')
+    if use_existing_build:
+        if not wrf_hydro_src.exists():
+            raise ValueError('Repository missing, unfortunately cant '
+                             'use existing build for this test.')
+    elif not wrf_hydro_src.exists():
+            clone_cmd = 'git clone https://github.com/NCAR/wrf_hydro_nwm_public.git'
+            clone_result = subprocess.run(
+                shlex.split(clone_cmd), cwd=wrf_hydro_src.parent)
+        # else:
+            # I have Decided against continuous integration.
+            #update_cmd = 'git pull origin master'
+            #update_result = subprocess.run(
+            #    shlex.split(update_cmd), cwd=wrf_hydro_src)
+
+    checkout_cmd = 'git checkout -f nwm-v2.1-beta3'
+    sub_result = subprocess.run(shlex.split(checkout_cmd), cwd=wrf_hydro_src)
+
+    commit_cmd = 'git --no-pager log -n 1 --pretty=oneline'
+    sub_result = subprocess.run(shlex.split(commit_cmd), cwd=wrf_hydro_src)
+
+    print('\n\n'
+          '**********************************\n')
 
     exp_config['ensemble']['constructor'] = str(exp_yaml.parent / 'constructor.py')
 
@@ -163,4 +200,3 @@ def config_file(request, test_dir):
 @pytest.fixture(scope="session")
 def config_dict(config_file):
     return hdp_tools.establish_config(config_file)
-
