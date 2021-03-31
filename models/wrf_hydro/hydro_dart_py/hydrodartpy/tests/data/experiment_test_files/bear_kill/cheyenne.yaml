@@ -281,7 +281,7 @@ run_experiment:
       # This must not exceed scheduler:ppn_use
       nproc: 0
       # OpenMPI
-      exe_cmd: 'mpirun -np 3 ./filter & mpirun -np 3 ./dart_to_noah'
+      exe_cmd: 'mpirun -np 3 ./filter && mpirun -np 3 ./dart_to_noah'
       #exe_cmd: 'mpirun --host {hostname} -np {nproc} {cmd}'
       # MPT
       #cmd: 'mpirun {hostname} -np {nproc} {cmd}'
