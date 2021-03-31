@@ -114,52 +114,58 @@ def setup_nysm_snow_daily(
     # Short-hand
     nysm_sched = config['observation_preparation']['NYSM_snow_daily']['scheduler']
 
-    # The easy ones.
-    replace_in_file(this_submit_script, 'JOB_NAME_TEMPLATE', nysm_sched['job_name'])
-    replace_in_file(this_submit_script, 'ACCOUNT_TEMPLATE', nysm_sched['account'])
-    replace_in_file(this_submit_script, 'EMAIL_WHO_TEMPLATE', nysm_sched['email_who'])
-    replace_in_file(this_submit_script, 'EMAIL_WHEN_TEMPLATE', nysm_sched['email_when'])
-    replace_in_file(this_submit_script, 'QUEUE_TEMPLATE', nysm_sched['queue'])
-
-    # Wall time
-    nysm_walltime = nysm_sched['walltime']
-    if len(nysm_walltime.split(':')) == 2:
-        nysm_walltime = nysm_walltime + ':00'
-    nysm_walltime = 'walltime=' + nysm_walltime
-    replace_in_file(this_submit_script, 'WALLTIME_TEMPLATE', nysm_walltime)
-
-    # Select statement
-    # Right now, only single node processing
-    select_stmt = 'select=1:ncpus={ncpus}:mpiprocs={mpiprocs}'.format(
-        **{
-            'ncpus': nysm_sched['ncpus'],
-            'mpiprocs': nysm_sched['mpiprocs']
-        }
-    )
-    replace_in_file(this_submit_script, 'PBS_SELECT_TEMPLATE', select_stmt)
-
-    wait_file = output_dir / '.this_submit_script_not_complete'
-    replace_in_file(this_submit_script, 'WAIT_FILE_TEMPLATE', str(wait_file))
-
-    proc = subprocess.Popen(
-        shlex.split('touch ' + wait_file.name),
-        cwd=output_dir
-    )
-    proc.wait()
-
-    proc = subprocess.Popen(
-        shlex.split('qsub ' + this_submit_script.name),
-        cwd=output_dir
-    )
-    proc.wait()
+    if nysm_sched is not None and nysm_sched != 'None':
     
-    print('Job submitted. \nWait file: ' + str(wait_file) + ' ...')
-    while wait_file.exists():
-        msg = 'Last check for wait file {twirl}: ' + \
-              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        for twirl in ['|', '/', '-', '\\', '|', '/', '-', '\\']:
-            print(msg.format(**{'twirl':twirl}), end='\r')
-            time.sleep(10/8)
+        # The easy ones.
+        replace_in_file(this_submit_script, 'JOB_NAME_TEMPLATE', nysm_sched['job_name'])
+        replace_in_file(this_submit_script, 'ACCOUNT_TEMPLATE', nysm_sched['account'])
+        replace_in_file(this_submit_script, 'EMAIL_WHO_TEMPLATE', nysm_sched['email_who'])
+        replace_in_file(this_submit_script, 'EMAIL_WHEN_TEMPLATE', nysm_sched['email_when'])
+        replace_in_file(this_submit_script, 'QUEUE_TEMPLATE', nysm_sched['queue'])
+
+        # Wall time
+        nysm_walltime = nysm_sched['walltime']
+        if len(nysm_walltime.split(':')) == 2:
+            nysm_walltime = nysm_walltime + ':00'
+        nysm_walltime = 'walltime=' + nysm_walltime
+        replace_in_file(this_submit_script, 'WALLTIME_TEMPLATE', nysm_walltime)
+
+        # Select statement
+        # Right now, only single node processing
+        select_stmt = 'select=1:ncpus={ncpus}:mpiprocs={mpiprocs}'.format(
+            **{
+                'ncpus': nysm_sched['ncpus'],
+                'mpiprocs': nysm_sched['mpiprocs']
+            }
+        )
+        replace_in_file(this_submit_script, 'PBS_SELECT_TEMPLATE', select_stmt)
+
+        wait_file = output_dir / '.this_submit_script_not_complete'
+        replace_in_file(this_submit_script, 'WAIT_FILE_TEMPLATE', str(wait_file))
+
+        proc = subprocess.Popen(
+            shlex.split('touch ' + wait_file.name),
+            cwd=output_dir
+        )
+        proc.wait()
+
+        proc = subprocess.Popen(
+            shlex.split('qsub ' + this_submit_script.name),
+            cwd=output_dir
+        )
+        proc.wait()
+
+        print('Job submitted. \nWait file: ' + str(wait_file) + ' ...')
+        while wait_file.exists():
+            msg = 'Last check for wait file {twirl}: ' + \
+                  datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            for twirl in ['|', '/', '-', '\\', '|', '/', '-', '\\']:
+                print(msg.format(**{'twirl':twirl}), end='\r')
+                time.sleep(10/8)
+
+    else:
+
+        result = create_nysm_snow_daily_obs_seq(config)
 
     # Link the obs_seq files to the "all_obs_dir" for the experiment.    
     all_obs_dir = pathlib.PosixPath(config['observation_preparation']['all_obs_dir'])

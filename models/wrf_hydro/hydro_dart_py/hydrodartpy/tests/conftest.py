@@ -116,8 +116,9 @@ def config_file(request, test_dir):
     run_dir = out_dir / 'run'
     exp_config['experiment']['run_dir'] = str(run_dir)
 
-    ini_dir = out_dir / 'initial_ensemble'
-    exp_config['initial_ens']['path'] = str(ini_dir)
+    if exp_config['initial_ens']['path'] == None:
+        ini_dir = out_dir / 'initial_ensemble'
+        exp_config['initial_ens']['path'] = str(ini_dir)
 
     all_obs_dir = out_dir / 'obs_seqs'
     exp_config['observation_preparation']['all_obs_dir'] = str(all_obs_dir)
@@ -125,8 +126,12 @@ def config_file(request, test_dir):
     if 'USGS_daily' in exp_config['observation_preparation'].keys():
         exp_config['observation_preparation']['USGS_daily']['output_dir'] = str(
             all_obs_dir / 'USGS_daily')
+    if 'NYSM_snow_daily' in exp_config['observation_preparation'].keys():
+        exp_config['observation_preparation']['NYSM_snow_daily']['output_dir'] = str(
+            all_obs_dir / 'NYSM_snow_daily')
 
-    if ('noise_function_files' in
+    if (exp_config['run_experiment']['perturb_forcing']['perturb'] and
+        'noise_function_files' in
         exp_config['run_experiment']['perturb_forcing'].keys()):
         pf = exp_config['run_experiment']['perturb_forcing']
         nffs = pf['noise_function_files']
@@ -180,8 +185,9 @@ def config_file(request, test_dir):
     else:
         _ = if_e_rm(test_yaml)
         _ = if_e_rm(run_dir)
-        _ = if_e_rm(ini_dir)
         _ = if_e_rm(all_obs_dir)
+        if 'ini_dir' in locals():
+            _ = if_e_rm(ini_dir)
         exp_dir_files = exp_dir.glob('*')
         builds_keep = [
             exp_config['dart']['build_dir'],

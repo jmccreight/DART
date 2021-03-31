@@ -1,8 +1,8 @@
 #!/bin/bash
-domain_tag=florence_cutout
+domain_tag=bear_kill
 locality=cheyenne
 
-# This is streamflow assimilation using WRF-Hydro
+# This is snow depth assimilation using noah
 # tests/experiment_test_files/florence_cutout
 test_dir=../../
 # this is relative to the test dir
