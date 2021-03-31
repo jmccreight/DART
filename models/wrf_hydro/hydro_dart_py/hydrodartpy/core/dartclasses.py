@@ -49,7 +49,6 @@ class DartWork(object):
         _ = [shutil.copy(str(dd), str(ss)) for dd, ss in zip(dart_exes, build_exes)] 
         self.exes = {bb.name: bb for bb in build_exes}
 
-
     def compile(
         self,
         path_dart,
