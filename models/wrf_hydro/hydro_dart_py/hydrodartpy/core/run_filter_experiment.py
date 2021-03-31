@@ -309,7 +309,7 @@ def run_filter(
            'cmd': './filter'
            }
     )
-    proc = subprocess.run(shlex.split(cmd_to_run), cwd=str(run_dir))
+    proc = subprocess.run(cmd_to_run, shell=True, cwd=str(run_dir))
     if proc.returncode != 0:
         raise ValueError('Filter did not return 0')
 

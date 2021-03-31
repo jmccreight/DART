@@ -44,7 +44,11 @@ def setup_wrf_hydro_ens_job(config, wrf_hydro_ens_sim):
         member_dates[0] + \
         datetime.timedelta(hours=config['run_experiment']['time']['advance_model_hours'])
 
-    entry_cmd = config['run_experiment']['perturb_forcing']['noise_cmd']
+    if config['run_experiment']['perturb_forcing']['perturb']:
+        entry_cmd = config['run_experiment']['perturb_forcing']['noise_cmd']
+    else:
+        entry_cmd = None
+
     exit_cmd = None
 
     job = wrfhydropy.Job(

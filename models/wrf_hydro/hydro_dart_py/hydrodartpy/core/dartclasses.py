@@ -28,7 +28,11 @@ class DartWork(object):
 
         self.path_rel = path_rel
 
-        self.input_nml_file = path_dart / self.path_rel / 'input.nml'
+        if str(path_rel) == 'models/noah/work':
+            self.input_nml_file = (
+                path_dart / 'models/wrf_hydro/work/input_noah.nml')
+        else:
+            self.input_nml_file = path_dart / path_rel / 'input.nml'
         self.input_nml = f90nml.read(self.input_nml_file)
 
         if build_dir != path_dart:
@@ -44,7 +48,6 @@ class DartWork(object):
         build_exes = [(build_dir / path_rel / dd.name) for dd in dart_exes]
         _ = [shutil.copy(str(dd), str(ss)) for dd, ss in zip(dart_exes, build_exes)] 
         self.exes = {bb.name: bb for bb in build_exes}
-
 
     def compile(
         self,

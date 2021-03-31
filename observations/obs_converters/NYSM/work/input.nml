@@ -1,0 +1,36 @@
+# I need to check what it would be instead of input_files 
+
+&preprocess_nml
+    input_obs_kind_mod_file = '../../../../assimilation_code/modules/observations/DEFAULT_obs_kind_mod.F90'
+   output_obs_kind_mod_file = '../../../../assimilation_code/modules/observations/obs_kind_mod.f90'
+     input_obs_def_mod_file = '../../../../observations/forward_operators/DEFAULT_obs_def_mod.F90'
+    output_obs_def_mod_file = '../../../../observations/forward_operators/obs_def_mod.f90'
+    input_files             = '../../../../observations/forward_operators/obs_def_land_mod.f90'
+  /
+
+# convert_NYSM_snow_nml:
+# input_files is a list of all input data, right now NYSM provides one file per day
+# gages_list_file is a list of all desired gages to be added to the obs_seq file
+# right now the gage_list_file does not do anything ... maybe will add it later
+
+&convert_NYSM_snow_nml
+   input_files     = 'list_of_obs_files.txt'
+   gages_list_file = 'wanted_gages_list.txt'
+   verbose         = 0
+   obs_fraction_for_error = 0.01
+   obs_min_err_std = 0.01
+  /
+
+&obs_kind_nml
+  /
+
+&location_nml
+  /
+
+&utilities_nml
+ module_details = .false.
+  /
+
+&obs_sequence_nml
+   write_binary_obs_sequence = .false.
+  /

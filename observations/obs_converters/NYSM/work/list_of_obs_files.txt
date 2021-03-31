@@ -1,0 +1,1 @@
+/glade/u/home/arezoo/wrf_hydro/DART/observations/obs_converters/NYSM/data/20190120.nc
